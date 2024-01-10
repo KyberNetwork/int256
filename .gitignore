@@ -1,0 +1,9 @@
+# OS specific
+.DS_Store
+
+# Dependency directories
+vendor/
+
+# IDE configuration files
+.idea/
+.vscode/launch.json
