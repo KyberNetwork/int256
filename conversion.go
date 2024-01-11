@@ -9,21 +9,19 @@ import (
 )
 
 const (
-	minI256Dec = "-57896044618658097711785492504343953926634992332820282019728792003956564819968"
-	maxI256Dec = "57896044618658097711785492504343953926634992332820282019728792003956564819967"
-	maxWords   = 256 / bits.UintSize
+	maxAbsI256Dec = "57896044618658097711785492504343953926634992332820282019728792003956564819968"
+	maxWords      = 256 / bits.UintSize
 )
 
 var (
-	ErrI256Range = errors.New("int256: out of range")
-	ErrOverflow  = errors.New("int256: overflow")
+	ErrOverflow = errors.New("int256: overflow")
 
 	multipliers = [5]*Int{
 		nil,
-		{10000000000000000000, 0, 0, 0},
-		{687399551400673280, 5421010862427522170, 0, 0},
-		{5332261958806667264, 17004971331911604867, 2938735877055718769, 0},
-		{0, 8607968719199866880, 532749306367912313, 1593091911132452277},
+		{0x8ac7230489e80000, 0, 0, 0},
+		{0x98a224000000000, 0x4b3b4ca85a86c47a, 0, 0},
+		{0x4a00000000000000, 0xebfdcb54864ada83, 0x28c87cb5c89a2571, 0},
+		{0, 0x7775a5f171951000, 0x764b4abe8652979, 0x161bcca7119915b5},
 	}
 )
 
@@ -67,17 +65,12 @@ func (z *Int) Dec() string {
 	if z.IsInt64() {
 		return strconv.FormatInt(z.Int64(), 10)
 	}
-	if z.IsMinI256() {
-		return minI256Dec
-	}
-
 	y := new(Int)
 	if s > 0 {
 		y.Set(z)
 	} else {
 		y.Neg(z)
 	}
-
 	var (
 		out     = []byte("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 		divisor = new(Int).SetUint64(10000000000000000000)
@@ -106,19 +99,16 @@ func (z *Int) Dec() string {
 }
 
 func (z *Int) SetFromDec(s string) error {
-	if s == minI256Dec {
-		z.Set(MinI256)
-		return nil
-	}
-
 	var isNeg bool
 	if len(s) > 0 && s[0] == '-' {
 		s = s[1:]
 		isNeg = true
 	}
 	if len(s) > 0 && s[0] == '0' {
-		var i int
-		var c rune
+		var (
+			i int
+			c rune
+		)
 		for i, c = range s {
 			if c != '0' {
 				break
@@ -126,19 +116,17 @@ func (z *Int) SetFromDec(s string) error {
 		}
 		s = s[i:]
 	}
-
-	if len(s) > len(maxI256Dec) || (len(s) == len(maxI256Dec) && s > maxI256Dec) {
-		return ErrI256Range
+	if len(s) > len(maxAbsI256Dec) ||
+		(len(s) == len(maxAbsI256Dec) && s > maxAbsI256Dec) ||
+		(s == maxAbsI256Dec && !isNeg) {
+		return ErrOverflow
 	}
-
 	if err := z.fromDecimal(s); err != nil {
 		return err
 	}
-
 	if isNeg {
 		z.Neg(z)
 	}
-
 	return nil
 }
 
@@ -155,7 +143,8 @@ func (z *Int) fromDecimal(bs string) error {
 	for i, mult := range multipliers {
 		if remaining <= 0 {
 			return nil
-		} else if remaining > 19 {
+		}
+		if remaining > 19 {
 			num, err = strconv.ParseUint(bs[remaining-19:remaining], 10, 64)
 		} else {
 			num, err = strconv.ParseUint(bs, 10, 64)

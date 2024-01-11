@@ -116,6 +116,20 @@ func (z *Int) Add(x, y *Int) *Int {
 	return z
 }
 
+func (z *Int) AddOverflow(x, y *Int) (*Int, bool) {
+	var carry uint64
+	z[0], carry = bits.Add64(x[0], y[0], 0)
+	z[1], carry = bits.Add64(x[1], y[1], carry)
+	z[2], carry = bits.Add64(x[2], y[2], carry)
+	z[3] = x[3] + y[3] + carry
+	var overflow bool
+	signX, signY, signZ := x.Sign(), y.Sign(), z.Sign()
+	if (signX == signY) && (signX != signZ) {
+		overflow = true
+	}
+	return z, overflow
+}
+
 func (z *Int) Sub(x, y *Int) *Int {
 	var carry uint64
 	z[0], carry = bits.Sub64(x[0], y[0], 0)
@@ -123,6 +137,20 @@ func (z *Int) Sub(x, y *Int) *Int {
 	z[2], carry = bits.Sub64(x[2], y[2], carry)
 	z[3] = x[3] - y[3] - carry
 	return z
+}
+
+func (z *Int) SubOverflow(x, y *Int) (*Int, bool) {
+	var carry uint64
+	z[0], carry = bits.Sub64(x[0], y[0], 0)
+	z[1], carry = bits.Sub64(x[1], y[1], carry)
+	z[2], carry = bits.Sub64(x[2], y[2], carry)
+	z[3] = x[3] - y[3] - carry
+	var overflow bool
+	signX, signY, signZ := x.Sign(), y.Sign(), z.Sign()
+	if (signX == 0 && y.IsMinI256()) || ((signX != 0) && (signX != signY) && (signX != signZ)) {
+		overflow = true
+	}
+	return z, overflow
 }
 
 func (z *Int) Mul(x, y *Int) *Int {
@@ -147,6 +175,64 @@ func (z *Int) Mul(x, y *Int) *Int {
 	res[3] = res3 + x[0]*y[3]
 
 	return z.Set(&res)
+}
+
+func (z *Int) MulOverflow(x, y *Int) (*Int, bool) {
+	var flipSign bool
+	xSign, ySign := x.Sign(), y.Sign()
+	if xSign*ySign == -1 {
+		flipSign = true
+	}
+	if xSign < 0 {
+		x.Neg(x)
+	}
+	if ySign < 0 {
+		y.Neg(y)
+	}
+
+	p := umul(x, y)
+	z[0], z[1], z[2], z[3] = p[0], p[1], p[2], p[3]
+
+	var overflow bool
+	if ((p[4] | p[5] | p[6] | p[7]) != 0) || z.IsNegative() {
+		overflow = true
+	}
+
+	if flipSign {
+		z.Neg(z)
+	}
+
+	return z, overflow
+}
+
+func umul(x, y *Int) [8]uint64 {
+	var (
+		res                           [8]uint64
+		carry, carry4, carry5, carry6 uint64
+		res1, res2, res3, res4, res5  uint64
+	)
+
+	carry, res[0] = bits.Mul64(x[0], y[0])
+	carry, res1 = umulHop(carry, x[1], y[0])
+	carry, res2 = umulHop(carry, x[2], y[0])
+	carry4, res3 = umulHop(carry, x[3], y[0])
+
+	carry, res[1] = umulHop(res1, x[0], y[1])
+	carry, res2 = umulStep(res2, x[1], y[1], carry)
+	carry, res3 = umulStep(res3, x[2], y[1], carry)
+	carry5, res4 = umulStep(carry4, x[3], y[1], carry)
+
+	carry, res[2] = umulHop(res2, x[0], y[2])
+	carry, res3 = umulStep(res3, x[1], y[2], carry)
+	carry, res4 = umulStep(res4, x[2], y[2], carry)
+	carry6, res5 = umulStep(carry5, x[3], y[2], carry)
+
+	carry, res[3] = umulHop(res3, x[0], y[3])
+	carry, res[4] = umulStep(res4, x[1], y[3], carry)
+	carry, res[5] = umulStep(res5, x[2], y[3], carry)
+	res[7], res[6] = umulStep(carry6, x[3], y[3], carry)
+
+	return res
 }
 
 func umulStep(z, x, y, carry uint64) (hi, lo uint64) {
@@ -175,46 +261,78 @@ func (z *Int) SetOne() *Int {
 	return z
 }
 
-func (z *Int) Div(x, y *Int) *Int {
+func (z *Int) Quo(x, y *Int) *Int {
 	if x.Sign() > 0 {
 		if y.Sign() > 0 {
-			z.div(x, y)
-			return z
+			return z.uquo(x, y)
 		}
-		z.div(x, new(Int).Neg(y))
+		z.uquo(x, new(Int).Neg(y))
 		return z.Neg(z)
 	}
 	if y.Sign() < 0 {
-		z.div(new(Int).Neg(x), new(Int).Neg(y))
-		return z
+		return z.uquo(new(Int).Neg(x), new(Int).Neg(y))
 	}
-	z.div(new(Int).Neg(x), y)
+	z.uquo(new(Int).Neg(x), y)
 	return z.Neg(z)
 }
 
-func (z *Int) div(x, y *Int) *Int {
+func (z *Int) uquo(x, y *Int) *Int {
 	if y.IsZero() {
 		panic(ErrZeroDivision)
 	}
 	if x.IsZero() {
-		return z.Clear()
+		z.Clear()
 	}
 	if x.Eq(y) {
 		return z.SetOne()
 	}
 	if x.IsInt64() && y.IsInt64() {
-		return z.SetInt64(x.Int64() / y.Int64())
+		xInt64 := x.Int64()
+		yInt64 := y.Int64()
+		return z.SetInt64(xInt64 / yInt64)
 	}
-	var quot Int
+	quot := Int{}
 	udivrem(quot[:], x[:], y)
 	return z.Set(&quot)
 }
 
+func (z *Int) Rem(x, y *Int) *Int {
+	if x.Sign() > 0 {
+		if y.Sign() > 0 {
+			return z.urem(x, y)
+		}
+		return z.urem(x, new(Int).Neg(y))
+	}
+	if y.Sign() < 0 {
+		z.urem(new(Int).Neg(x), new(Int).Neg(y))
+		return z.Neg(z)
+	}
+	z.urem(new(Int).Neg(x), y)
+	return z.Neg(z)
+}
+
+func (z *Int) urem(x, y *Int) *Int {
+	if y.IsZero() {
+		panic(ErrZeroDivision)
+	}
+	if x.IsZero() {
+		z.Clear()
+	}
+	if x.Eq(y) {
+		return z.Clear()
+	}
+	if x.IsInt64() && y.IsInt64() {
+		xInt64 := x.Int64()
+		yInt64 := y.Int64()
+		return z.SetInt64(xInt64 % yInt64)
+	}
+	quot := Int{}
+	rem := udivrem(quot[:], x[:], y)
+	return z.Set(&rem)
+}
+
 func (z *Int) Pow(x *Int, n uint64) *Int {
 	z.SetOne()
-	if n == 0 {
-		return z
-	}
 	for n > 0 {
 		if n&1 == 1 {
 			z.Mul(z, x)
@@ -223,6 +341,44 @@ func (z *Int) Pow(x *Int, n uint64) *Int {
 		x.Mul(x, x)
 	}
 	return z
+}
+
+func (z *Int) Lt(x *Int) bool {
+	return z.Cmp(x) < 0
+}
+
+func (z *Int) Lte(x *Int) bool {
+	return z.Cmp(x) <= 0
+}
+
+func (z *Int) Gt(x *Int) bool {
+	return z.Cmp(x) > 0
+}
+
+func (z *Int) Gte(x *Int) bool {
+	return z.Cmp(x) >= 0
+}
+
+func (z *Int) Cmp(x *Int) int {
+	zSign, xSign := z.Sign(), x.Sign()
+	if zSign != xSign {
+		if zSign > xSign {
+			return 1
+		}
+		return -1
+	}
+	if zSign == 0 {
+		return 0
+	}
+	for i := 3; i >= 0; i-- {
+		if z[i] > x[i] {
+			return zSign
+		}
+		if z[i] < x[i] {
+			return -zSign
+		}
+	}
+	return 0
 }
 
 func (z *Int) Clone() *Int {

@@ -111,7 +111,7 @@ func BenchmarkDiv(bench *testing.B) {
 		z := new(Int)
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
-			z.Mul(x, y)
+			z.Quo(x, y)
 		}
 	}
 
@@ -121,7 +121,7 @@ func BenchmarkDiv(bench *testing.B) {
 		z := new(big.Int)
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
-			z.Mul(x, y)
+			z.Quo(x, y)
 		}
 	}
 
@@ -129,10 +129,44 @@ func BenchmarkDiv(bench *testing.B) {
 	bench.Run("int256", divint256)
 
 	/*
-	   goos: darwin
-	   goarch: arm64
-	   pkg: github.com/KyberNetwork/int256
-	   BenchmarkDiv/big-10         	166427436	         7.089 ns/op	       0 B/op	       0 allocs/op
-	   BenchmarkDiv/int256-10      	414451401	         2.899 ns/op	       0 B/op	       0 allocs/op
+		goos: darwin
+		goarch: arm64
+		pkg: github.com/KyberNetwork/int256
+		BenchmarkDiv/big-10         	33711938	        35.53 ns/op	       8 B/op	       1 allocs/op
+		BenchmarkDiv/int256-10      	49004593	        24.19 ns/op	       0 B/op	       0 allocs/op
+	*/
+}
+
+func BenchmarkRem(bench *testing.B) {
+	remint256 := func(bench *testing.B) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("2324792147219472195")
+		z := new(Int)
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			z.Rem(x, y)
+		}
+	}
+
+	rembig := func(bench *testing.B) {
+		x, _ := new(big.Int).SetString("-57896044618658097711785492504343953926634992332820282019728792003956564819968", 10)
+		y, _ := new(big.Int).SetString("2324792147219472195", 10)
+		z := new(big.Int)
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			z.Rem(x, y)
+		}
+	}
+
+	bench.Run("big", rembig)
+	bench.Run("int256", remint256)
+
+	/*
+		goos: darwin
+		goarch: arm64
+		pkg: github.com/KyberNetwork/int256
+		BenchmarkRem/big-10         	29214276	        40.21 ns/op	      64 B/op	       1 allocs/op
+		BenchmarkRem/int256-10      	50197564	        24.10 ns/op	       0 B/op	       0 allocs/op
+		PASS
 	*/
 }
