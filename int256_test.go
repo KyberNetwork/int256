@@ -278,25 +278,25 @@ func TestMul(t *testing.T) {
 
 func TestIsInt64(t *testing.T) {
 	t.Run("1. should return correct result", func(t *testing.T) {
-		// max int256
+		// max int64
 		x := MustFromDec("9223372036854775807")
 		assert.True(t, x.IsInt64())
 	})
 
 	t.Run("2. should return correct result", func(t *testing.T) {
-		// min int256
+		// min int64
 		x := MustFromDec("-9223372036854775808")
 		assert.True(t, x.IsInt64())
 	})
 
 	t.Run("3. should return correct result", func(t *testing.T) {
-		// max int256 + 1
+		// max int64 + 1
 		x := MustFromDec("9223372036854775808")
 		assert.False(t, x.IsInt64())
 	})
 
 	t.Run("4. should return correct result", func(t *testing.T) {
-		// min int256 - 1
+		// min int64 - 1
 		x := MustFromDec("-9223372036854775809")
 		assert.False(t, x.IsInt64())
 	})

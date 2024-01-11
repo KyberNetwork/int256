@@ -10,6 +10,7 @@ type Int [4]uint64
 
 var (
 	MinI256 = &Int{0, 0, 0, 0x8000000000000000}
+	MaxI256 = &Int{0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0x7fffffffffffffff}
 
 	ErrZeroDivision = errors.New("zero division")
 )
@@ -179,10 +180,9 @@ func (z *Int) Div(x, y *Int) *Int {
 		if y.Sign() > 0 {
 			z.div(x, y)
 			return z
-		} else {
-			z.div(x, new(Int).Neg(y))
-			return z.Neg(z)
 		}
+		z.div(x, new(Int).Neg(y))
+		return z.Neg(z)
 	}
 	if y.Sign() < 0 {
 		z.div(new(Int).Neg(x), new(Int).Neg(y))
