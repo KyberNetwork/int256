@@ -43,22 +43,20 @@ func BenchmarkAdd(bench *testing.B) {
 	sz := len(testcasesBI)
 
 	addint256 := func(bench *testing.B) {
-		z := new(Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Add(testcasesI256[testID][0], testcasesI256[testID][1])
+			new(Int).Add(testcasesI256[testID][0], testcasesI256[testID][1])
 		}
 	}
 
 	addbig := func(bench *testing.B) {
-		z := new(big.Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Add(testcasesBI[testID][0], testcasesBI[testID][1])
+			new(big.Int).Add(testcasesBI[testID][0], testcasesBI[testID][1])
 		}
 	}
 
@@ -115,22 +113,20 @@ func BenchmarkSub(bench *testing.B) {
 	sz := len(testcasesBI)
 
 	subint256 := func(bench *testing.B) {
-		z := new(Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Sub(testcasesI256[testID][0], testcasesI256[testID][1])
+			new(Int).Sub(testcasesI256[testID][0], testcasesI256[testID][1])
 		}
 	}
 
 	subbig := func(bench *testing.B) {
-		z := new(big.Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Sub(testcasesBI[testID][0], testcasesBI[testID][1])
+			new(big.Int).Sub(testcasesBI[testID][0], testcasesBI[testID][1])
 		}
 	}
 
@@ -175,22 +171,20 @@ func BenchmarkMul(bench *testing.B) {
 	sz := len(testcasesBI)
 
 	mulint256 := func(bench *testing.B) {
-		z := new(Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Mul(testcasesI256[testID][0], testcasesI256[testID][1])
+			new(Int).Mul(testcasesI256[testID][0], testcasesI256[testID][1])
 		}
 	}
 
 	mulbig := func(bench *testing.B) {
-		z := new(big.Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Mul(testcasesBI[testID][0], testcasesBI[testID][1])
+			new(big.Int).Mul(testcasesBI[testID][0], testcasesBI[testID][1])
 		}
 	}
 
@@ -235,22 +229,20 @@ func BenchmarkQuo(bench *testing.B) {
 	sz := len(testcasesBI)
 
 	divint256 := func(bench *testing.B) {
-		z := new(Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Quo(testcasesI256[testID][0], testcasesI256[testID][1])
+			new(Int).Quo(testcasesI256[testID][0], testcasesI256[testID][1])
 		}
 	}
 
 	divbig := func(bench *testing.B) {
-		z := new(big.Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Quo(testcasesBI[testID][0], testcasesBI[testID][1])
+			new(big.Int).Quo(testcasesBI[testID][0], testcasesBI[testID][1])
 		}
 	}
 
@@ -295,22 +287,20 @@ func BenchmarkRem(bench *testing.B) {
 	sz := len(testcasesBI)
 
 	remint256 := func(bench *testing.B) {
-		z := new(Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Rem(testcasesI256[testID][0], testcasesI256[testID][1])
+			new(Int).Rem(testcasesI256[testID][0], testcasesI256[testID][1])
 		}
 	}
 
 	rembig := func(bench *testing.B) {
-		z := new(big.Int)
 		testID := 0
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			z.Rem(testcasesBI[testID][0], testcasesBI[testID][1])
+			new(big.Int).Rem(testcasesBI[testID][0], testcasesBI[testID][1])
 		}
 	}
 
@@ -374,4 +364,44 @@ func BenchmarkCmp(bench *testing.B) {
 
 	bench.Run("big", cmpbig)
 	bench.Run("int256", cmpint256)
+}
+
+func BenchmarkFromDecimalString(bench *testing.B) {
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcases = []string{}
+	)
+
+	for i := 0; i < 200; i++ {
+		x := new(big.Int).Rand(rnd, lim)
+		negx := new(big.Int).Neg(x)
+		testcases = append(testcases, x.String())
+		testcases = append(testcases, negx.String())
+	}
+
+	sz := len(testcases)
+
+	fromdecint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).SetFromDec(testcases[testID])
+		}
+	}
+
+	fromdecbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).SetString(testcases[testID], 10)
+		}
+	}
+
+	bench.Run("big", fromdecbig)
+	bench.Run("int256", fromdecint256)
 }
