@@ -7,3 +7,6 @@ vendor/
 # IDE configuration files
 .idea/
 .vscode/launch.json
+
+#Tests
+*.cov

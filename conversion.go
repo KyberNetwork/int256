@@ -198,7 +198,12 @@ func (z *Int) SetFromBig(b *big.Int) bool {
 			}
 		}
 	}
-	if b.Sign() == -1 {
+
+	bSign := b.Sign()
+	if !overflow && z.IsNegative() && !(bSign < 0 && z.IsMinI256()) {
+		overflow = true
+	}
+	if bSign == -1 {
 		z.Neg(z)
 	}
 	return overflow

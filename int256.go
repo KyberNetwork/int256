@@ -81,6 +81,10 @@ func (z *Int) IsZero() bool {
 	return (z[0] | z[1] | z[2] | z[3]) == 0
 }
 
+func (z *Int) IsOne() bool {
+	return (z[0] == 1) && (z[1]|z[2]|z[3]) == 0
+}
+
 func (z *Int) IsNegative() bool {
 	return z[3]&0x8000000000000000 != 0
 }
@@ -178,6 +182,10 @@ func (z *Int) Mul(x, y *Int) *Int {
 }
 
 func (z *Int) MulOverflow(x, y *Int) (*Int, bool) {
+	if (x.IsMinI256() && y.IsOne()) || (x.IsOne() && y.IsMinI256()) {
+		return z.Set(MinI256), false
+	}
+
 	var flipSign bool
 	xSign, ySign := x.Sign(), y.Sign()
 	if xSign*ySign == -1 {
