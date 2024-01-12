@@ -90,7 +90,7 @@ func (z *Int) IsNegative() bool {
 }
 
 func (z *Int) IsPositive() bool {
-	return z[3]&0x8000000000000000 == 0
+	return (z[3]&0x8000000000000000) == 0 && (z[3]|z[2]|z[1]|z[0]) != 0
 }
 
 func (z *Int) IsMinI256() bool {
@@ -295,9 +295,7 @@ func (z *Int) uquo(x, y *Int) *Int {
 		return z.SetOne()
 	}
 	if x.IsInt64() && y.IsInt64() {
-		xInt64 := x.Int64()
-		yInt64 := y.Int64()
-		return z.SetInt64(xInt64 / yInt64)
+		return z.SetInt64(x.Int64() / y.Int64())
 	}
 	quot := Int{}
 	udivrem(quot[:], x[:], y)
@@ -380,10 +378,10 @@ func (z *Int) Cmp(x *Int) int {
 	}
 	for i := 3; i >= 0; i-- {
 		if z[i] > x[i] {
-			return zSign
+			return 1
 		}
 		if z[i] < x[i] {
-			return -zSign
+			return -1
 		}
 	}
 	return 0

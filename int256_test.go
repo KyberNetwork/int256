@@ -1,11 +1,35 @@
 package int256
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewInt(t *testing.T) {
+	t.Run("positive", func(t *testing.T) {
+		v := int64(math.MaxInt64)
+		z := NewInt(v)
+		assert.True(t, z.IsInt64())
+		assert.Equal(t, v, z.Int64())
+	})
+
+	t.Run("negative", func(t *testing.T) {
+		v := int64(math.MinInt64)
+		z := NewInt(v)
+		assert.True(t, z.IsInt64())
+		assert.Equal(t, v, z.Int64())
+	})
+
+	t.Run("zero", func(t *testing.T) {
+		v := int64(0)
+		z := NewInt(v)
+		assert.True(t, z.IsInt64())
+		assert.Equal(t, v, z.Int64())
+	})
+}
 
 func TestGetSetInt64(t *testing.T) {
 	t.Run("positive", func(t *testing.T) {
@@ -139,7 +163,6 @@ func TestQuo(t *testing.T) {
 		x := MustFromDec("100")
 		y := MustFromDec("-2")
 		expected := "-50"
-
 		z := new(Int).Quo(x, y)
 		assert.Equal(t, expected, z.Dec())
 	})
@@ -148,7 +171,6 @@ func TestQuo(t *testing.T) {
 		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
 		y := MustFromDec("3194721952341")
 		expected := "-18122404854742851078740194629148605029554483750497671811411863963"
-
 		z := new(Int).Quo(x, y)
 		assert.Equal(t, expected, z.Dec())
 	})
@@ -157,7 +179,6 @@ func TestQuo(t *testing.T) {
 		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819961")
 		y := MustFromDec("-4134320184329015710493829104")
 		expected := "-14003764110508630918697735423914335136046266814161"
-
 		z := new(Int).Quo(x, y)
 		assert.Equal(t, expected, z.Dec())
 	})
@@ -166,7 +187,6 @@ func TestQuo(t *testing.T) {
 		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819961")
 		y := MustFromDec("-4134320184329015710493829104")
 		expected := "14003764110508630918697735423914335136046266814161"
-
 		z := new(Int).Quo(x, y)
 		assert.Equal(t, expected, z.Dec())
 	})
@@ -175,7 +195,6 @@ func TestQuo(t *testing.T) {
 		x := MustFromDec("-578960446186580977117854925043439539266349923328202564819961")
 		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
 		expected := "0"
-
 		z := new(Int).Quo(x, y)
 		assert.Equal(t, expected, z.Dec())
 	})
@@ -184,9 +203,30 @@ func TestQuo(t *testing.T) {
 		x := MustFromDec("3214732915732914729142135321421")
 		y := MustFromDec("510482085320157124")
 		expected := "6297445117426"
-
 		z := new(Int).Quo(x, y)
 		assert.Equal(t, expected, z.Dec())
+	})
+
+	t.Run("6. should return correct result", func(t *testing.T) {
+		x := MustFromDec("510482085320157124")
+		y := MustFromDec("510482085320157124")
+		expected := "1"
+		z := new(Int).Quo(x, y)
+		assert.Equal(t, expected, z.Dec())
+	})
+
+	t.Run("7. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		y := MustFromDec("510482085320157124")
+		expected := "0"
+		z := new(Int).Quo(x, y)
+		assert.Equal(t, expected, z.Dec())
+	})
+
+	t.Run("8. should panic error", func(t *testing.T) {
+		x := MustFromDec("1")
+		y := MustFromDec("0")
+		assert.Panics(t, func() { new(Int).Quo(x, y) })
 	})
 }
 
@@ -303,6 +343,25 @@ func TestIsInt64(t *testing.T) {
 	})
 }
 
+func TestIsUint64(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		// max uint64
+		x := MustFromDec("18446744073709551615")
+		assert.True(t, x.IsUint64())
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		// max uint64 + 1
+		x := MustFromDec("18446744073709551616")
+		assert.False(t, x.IsUint64())
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		assert.True(t, x.IsUint64())
+	})
+}
+
 func TestPow(t *testing.T) {
 	t.Run("1. should return correct result", func(t *testing.T) {
 		x := MustFromDec("2")
@@ -376,6 +435,20 @@ func TestRem(t *testing.T) {
 		expected := "549633341738318150337156"
 		z := new(Int).Rem(x, y)
 		assert.Equal(t, expected, z.Dec())
+	})
+
+	t.Run("7. should return correct error", func(t *testing.T) {
+		x := MustFromDec("1974924792517421647328142")
+		y := MustFromDec("1974924792517421647328142")
+		expected := "0"
+		z := new(Int).Rem(x, y)
+		assert.Equal(t, expected, z.Dec())
+	})
+
+	t.Run("8. should panic error", func(t *testing.T) {
+		x := MustFromDec("1")
+		y := MustFromDec("0")
+		assert.Panics(t, func() { new(Int).Rem(x, y) })
 	})
 }
 
@@ -580,5 +653,175 @@ func TestMulOverFlow(t *testing.T) {
 		z, overflow := new(Int).MulOverflow(x, y)
 		assert.Equal(t, expected, z.Dec())
 		assert.True(t, overflow)
+	})
+}
+
+func TestIsPostive(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("100")
+		assert.True(t, x.IsPositive())
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-100")
+		assert.False(t, x.IsPositive())
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		assert.False(t, x.IsPositive())
+	})
+}
+
+func TestCmp(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.Equal(t, -1, x.Cmp(y))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		assert.Equal(t, 0, x.Cmp(y))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		assert.Equal(t, 1, x.Cmp(y))
+	})
+
+	t.Run("4. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.Equal(t, 0, x.Cmp(y))
+	})
+
+	t.Run("5. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		y := MustFromDec("0")
+		assert.Equal(t, 0, x.Cmp(y))
+	})
+
+	t.Run("6. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		y := MustFromDec("-10")
+		assert.Equal(t, 1, x.Cmp(y))
+	})
+
+	t.Run("7. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.Equal(t, -1, x.Cmp(y))
+	})
+
+	t.Run("8. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-578960446186580977117854925043439539266349923328202820197287920039565648")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.Equal(t, 1, x.Cmp(y))
+	})
+}
+
+func TestLt(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.True(t, x.Lt(y))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.False(t, x.Lt(y))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		assert.False(t, x.Lt(y))
+	})
+}
+
+func TestLte(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.True(t, x.Lte(y))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.True(t, x.Lte(y))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		assert.False(t, x.Lte(y))
+	})
+}
+
+func TestGt(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.False(t, x.Gt(y))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.False(t, x.Gt(y))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		assert.True(t, x.Gt(y))
+	})
+}
+
+func TestGte(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.False(t, x.Gte(y))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		assert.True(t, x.Gte(y))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("57896044618658097711785492504343953926634992332820282019728792003956564819967")
+		y := MustFromDec("-57896044618658097711785492504343953926634992332820282019728792003956564819968")
+		assert.True(t, x.Gte(y))
+	})
+}
+
+func TestClone(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("100")
+		y := x.Clone()
+		assert.Equal(t, x.Dec(), y.Dec())
+		assert.NotEqual(t, fmt.Sprintf("%p", x), fmt.Sprintf("%p", y))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-100")
+		y := x.Clone()
+		assert.Equal(t, x.Dec(), y.Dec())
+		assert.NotEqual(t, fmt.Sprintf("%p", x), fmt.Sprintf("%p", y))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		y := x.Clone()
+		assert.Equal(t, x.Dec(), y.Dec())
+		assert.NotEqual(t, fmt.Sprintf("%p", x), fmt.Sprintf("%p", y))
 	})
 }
