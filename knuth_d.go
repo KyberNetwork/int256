@@ -106,7 +106,7 @@ func reciprocal2by1(d uint64) uint64 {
 func udivrem2by1(uh, ul, d, reciprocal uint64) (quot, rem uint64) {
 	qh, ql := bits.Mul64(reciprocal, uh)
 	ql, carry := bits.Add64(ql, ul, 0)
-	qh, _ = bits.Add64(qh, uh, carry)
+	qh += uh + carry
 	qh++
 
 	r := ul - qh*d

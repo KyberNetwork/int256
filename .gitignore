@@ -8,5 +8,5 @@ vendor/
 .idea/
 .vscode/launch.json
 
-#Tests
+# Tests
 *.cov
