@@ -389,7 +389,7 @@ func BenchmarkFromDecimalString(bench *testing.B) {
 		bench.ResetTimer()
 		for i := 0; i < bench.N; i++ {
 			testID = i % sz
-			new(Int).SetFromDec(testcases[testID])
+			_ = new(Int).SetFromDec(testcases[testID])
 		}
 	}
 
