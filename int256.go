@@ -366,25 +366,22 @@ func (z *Int) Gte(x *Int) bool {
 }
 
 func (z *Int) Cmp(x *Int) int {
-	zSign, xSign := z.Sign(), x.Sign()
-	if zSign != xSign {
-		if zSign > xSign {
-			return 1
-		}
+	zneg := int8(z[3] >> 63)
+	xneg := int8(x[3] >> 63)
+	if zneg != xneg {
+		return int(xneg - zneg)
+	}
+	d0, carry := bits.Sub64(z[0], x[0], 0)
+	d1, carry := bits.Sub64(z[1], x[1], carry)
+	d2, carry := bits.Sub64(z[2], x[2], carry)
+	d3, carry := bits.Sub64(z[3], x[3], carry)
+	if carry == 1 {
 		return -1
 	}
-	if zSign == 0 {
+	if d0|d1|d2|d3 == 0 {
 		return 0
 	}
-	for i := 3; i >= 0; i-- {
-		if z[i] > x[i] {
-			return 1
-		}
-		if z[i] < x[i] {
-			return -1
-		}
-	}
-	return 0
+	return 1
 }
 
 func (z *Int) Clone() *Int {
