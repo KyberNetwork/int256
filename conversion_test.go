@@ -93,7 +93,7 @@ func TestDec(t *testing.T) {
 	})
 }
 
-func TestFromDec(t *testing.T) {
+func TestMustFromDec(t *testing.T) {
 	t.Run("1. should return correct result", func(t *testing.T) {
 		dec := "-1"
 		z := MustFromDec(dec)
@@ -184,13 +184,49 @@ func TestFromDec(t *testing.T) {
 		assert.Equal(t, z[0], uint64(0xb46fb9323a6d889d))
 	})
 
-	t.Run("11. should return error", func(t *testing.T) {
+	t.Run("11. should panic error", func(t *testing.T) {
+		dec := "123456789XLXX"
+		assert.Panics(t, func() { MustFromDec(dec) })
+	})
+}
+
+func TestFromDec(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		dec := "12345678431937219573219471295439254379564372953245"
+		z, err := FromDec(dec)
+		assert.Nil(t, err)
+		assert.Equal(t, z[3], uint64(0x0000000000000000))
+		assert.Equal(t, z[2], uint64(0x00000008727f5e06))
+		assert.Equal(t, z[1], uint64(0x86e2a46fd1c06d19))
+		assert.Equal(t, z[0], uint64(0xb46fb9323a6d889d))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		dec := "-0009223372036854775808"
+		z := MustFromDec(dec)
+		assert.Equal(t, z[3], uint64(0xffffffffffffffff))
+		assert.Equal(t, z[2], uint64(0xffffffffffffffff))
+		assert.Equal(t, z[1], uint64(0xffffffffffffffff))
+		assert.Equal(t, z[0], uint64(0x8000000000000000))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		dec := "00009223372036854775807"
+		z, err := FromDec(dec)
+		assert.Nil(t, err)
+		assert.Equal(t, z[3], uint64(0))
+		assert.Equal(t, z[2], uint64(0))
+		assert.Equal(t, z[1], uint64(0))
+		assert.Equal(t, z[0], uint64(0x7fffffffffffffff))
+	})
+
+	t.Run("4. should return error", func(t *testing.T) {
 		dec := "#123"
 		_, err := FromDec(dec)
 		assert.Error(t, err)
 	})
 
-	t.Run("12. should return error", func(t *testing.T) {
+	t.Run("5. should return error", func(t *testing.T) {
 		// (1 << 255)
 		dec := "57896044618658097711785492504343953926634992332820282019728792003956564819968"
 		_, err := FromDec(dec)
@@ -221,6 +257,81 @@ func TestFromBig(t *testing.T) {
 		z, err := FromBig(b)
 		assert.Nil(t, err)
 		assert.Equal(t, v, z.Dec())
+	})
+
+	t.Run("4. should return error overflow", func(t *testing.T) {
+		v := "-57896044618658097711785492504343953926634992332820282019728792003956564819969"
+		b, _ := new(big.Int).SetString(v, 10)
+		_, err := FromBig(b)
+		assert.ErrorIs(t, err, ErrOverflow)
+	})
+
+	t.Run("5. should return error overflow", func(t *testing.T) {
+		v := "57896044618658097711785492504343953926634992332820282019728792003956564819968"
+		b, _ := new(big.Int).SetString(v, 10)
+		_, err := FromBig(b)
+		assert.ErrorIs(t, err, ErrOverflow)
+	})
+
+	t.Run("6. should return error overflow", func(t *testing.T) {
+		v := "57896044618658097711785492504343953926634992332820282019728792003956564819968431242"
+		b, _ := new(big.Int).SetString(v, 10)
+		_, err := FromBig(b)
+		assert.ErrorIs(t, err, ErrOverflow)
+	})
+
+	t.Run("7. should return error overflow", func(t *testing.T) {
+		v := "-57896044618658097711785492504343953926634992332820282019728792003956564819968431242"
+		b, _ := new(big.Int).SetString(v, 10)
+		_, err := FromBig(b)
+		assert.ErrorIs(t, err, ErrOverflow)
+	})
+}
+
+func TestMustFromBig(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		v := "-57896044618658097711785492504343953926634992332820282019728792003956564819968"
+		b, _ := new(big.Int).SetString(v, 10)
+		z := MustFromBig(b)
+		assert.Equal(t, v, z.Dec())
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		v := "57896044618658097711785492504343953926634992332820282019728792003956564819967"
+		b, _ := new(big.Int).SetString(v, 10)
+		z := MustFromBig(b)
+		assert.Equal(t, v, z.Dec())
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		v := "0"
+		b, _ := new(big.Int).SetString(v, 10)
+		z := MustFromBig(b)
+		assert.Equal(t, v, z.Dec())
+	})
+
+	t.Run("4. should panic error overflow", func(t *testing.T) {
+		v := "-57896044618658097711785492504343953926634992332820282019728792003956564819969"
+		b, _ := new(big.Int).SetString(v, 10)
+		assert.Panics(t, func() { MustFromBig(b) })
+	})
+
+	t.Run("5. should panic error overflow", func(t *testing.T) {
+		v := "57896044618658097711785492504343953926634992332820282019728792003956564819968"
+		b, _ := new(big.Int).SetString(v, 10)
+		assert.Panics(t, func() { MustFromBig(b) })
+	})
+
+	t.Run("6. should panic error overflow", func(t *testing.T) {
+		v := "57896044618658097711785492504343953926634992332820282019728792003956564819968431242"
+		b, _ := new(big.Int).SetString(v, 10)
+		assert.Panics(t, func() { MustFromBig(b) })
+	})
+
+	t.Run("7. should panic error overflow", func(t *testing.T) {
+		v := "-57896044618658097711785492504343953926634992332820282019728792003956564819968431242"
+		b, _ := new(big.Int).SetString(v, 10)
+		assert.Panics(t, func() { MustFromBig(b) })
 	})
 }
 

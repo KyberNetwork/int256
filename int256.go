@@ -81,12 +81,16 @@ func (z *Int) IsZero() bool {
 	return (z[0] | z[1] | z[2] | z[3]) == 0
 }
 
+func (z *Int) IsOne() bool {
+	return (z[0] == 1) && (z[1]|z[2]|z[3]) == 0
+}
+
 func (z *Int) IsNegative() bool {
 	return z[3]&0x8000000000000000 != 0
 }
 
 func (z *Int) IsPositive() bool {
-	return z[3]&0x8000000000000000 == 0
+	return (z[3]&0x8000000000000000) == 0 && (z[3]|z[2]|z[1]|z[0]) != 0
 }
 
 func (z *Int) IsMinI256() bool {
@@ -178,6 +182,10 @@ func (z *Int) Mul(x, y *Int) *Int {
 }
 
 func (z *Int) MulOverflow(x, y *Int) (*Int, bool) {
+	if (x.IsMinI256() && y.IsOne()) || (x.IsOne() && y.IsMinI256()) {
+		return z.Set(MinI256), false
+	}
+
 	var flipSign bool
 	xSign, ySign := x.Sign(), y.Sign()
 	if xSign*ySign == -1 {
@@ -287,9 +295,7 @@ func (z *Int) uquo(x, y *Int) *Int {
 		return z.SetOne()
 	}
 	if x.IsInt64() && y.IsInt64() {
-		xInt64 := x.Int64()
-		yInt64 := y.Int64()
-		return z.SetInt64(xInt64 / yInt64)
+		return z.SetInt64(x.Int64() / y.Int64())
 	}
 	quot := Int{}
 	udivrem(quot[:], x[:], y)
@@ -360,25 +366,22 @@ func (z *Int) Gte(x *Int) bool {
 }
 
 func (z *Int) Cmp(x *Int) int {
-	zSign, xSign := z.Sign(), x.Sign()
-	if zSign != xSign {
-		if zSign > xSign {
-			return 1
-		}
+	zneg := int8(z[3] >> 63)
+	xneg := int8(x[3] >> 63)
+	if zneg != xneg {
+		return int(xneg - zneg)
+	}
+	d0, carry := bits.Sub64(z[0], x[0], 0)
+	d1, carry := bits.Sub64(z[1], x[1], carry)
+	d2, carry := bits.Sub64(z[2], x[2], carry)
+	d3, carry := bits.Sub64(z[3], x[3], carry)
+	if carry == 1 {
 		return -1
 	}
-	if zSign == 0 {
+	if d0|d1|d2|d3 == 0 {
 		return 0
 	}
-	for i := 3; i >= 0; i-- {
-		if z[i] > x[i] {
-			return zSign
-		}
-		if z[i] < x[i] {
-			return -zSign
-		}
-	}
-	return 0
+	return 1
 }
 
 func (z *Int) Clone() *Int {
