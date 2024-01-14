@@ -13,6 +13,7 @@ var (
 	MaxI256 = &Int{0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0x7fffffffffffffff}
 
 	ErrZeroDivision = errors.New("zero division")
+	ErrNegativeNum  = errors.New("negative number")
 )
 
 func NewInt(val int64) *Int {
@@ -269,6 +270,11 @@ func (z *Int) SetOne() *Int {
 	return z
 }
 
+func (z *Int) SetAllBitsOne() *Int {
+	z[0], z[1], z[2], z[3] = 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff
+	return z
+}
+
 func (z *Int) Quo(x, y *Int) *Int {
 	if x.Sign() > 0 {
 		if y.Sign() > 0 {
@@ -386,4 +392,178 @@ func (z *Int) Cmp(x *Int) int {
 
 func (z *Int) Clone() *Int {
 	return &Int{z[0], z[1], z[2], z[3]}
+}
+
+func (z *Int) Or(x, y *Int) *Int {
+	z[0] = x[0] | y[0]
+	z[1] = x[1] | y[1]
+	z[2] = x[2] | y[2]
+	z[3] = x[3] | y[3]
+	return z
+}
+
+func (z *Int) And(x, y *Int) *Int {
+	z[0] = x[0] & y[0]
+	z[1] = x[1] & y[1]
+	z[2] = x[2] & y[2]
+	z[3] = x[3] & y[3]
+	return z
+}
+
+func (z *Int) Xor(x, y *Int) *Int {
+	z[0] = x[0] ^ y[0]
+	z[1] = x[1] ^ y[1]
+	z[2] = x[2] ^ y[2]
+	z[3] = x[3] ^ y[3]
+	return z
+}
+
+func (z *Int) Not(x *Int) *Int {
+	z[0] = ^x[0]
+	z[1] = ^x[1]
+	z[2] = ^x[2]
+	z[3] = ^x[3]
+	return z
+}
+
+func (z *Int) Lsh(x *Int, n uint) *Int {
+	if n == 0 {
+		return z.Set(x)
+	}
+	if n >= 256 {
+		return z.Clear()
+	}
+	switch {
+	case n >= 192:
+		n -= 192
+		z[3], z[2], z[1], z[0] = x[0]<<n, 0, 0, 0
+	case n >= 128:
+		n -= 128
+		z[3] = (x[1] << n) | (x[0] >> (64 - n))
+		z[2] = x[0] << n
+		z[1], z[0] = 0, 0
+	case n >= 64:
+		n -= 64
+		z[3] = (x[2] << n) | (x[1] >> (64 - n))
+		z[2] = (x[1] << n) | (x[0] >> (64 - n))
+		z[1] = x[0] << n
+		z[0] = 0
+	default:
+		z[3] = (x[3] << n) | (x[2] >> (64 - n))
+		z[2] = (x[2] << n) | (x[1] >> (64 - n))
+		z[1] = (x[1] << n) | (x[0] >> (64 - n))
+		z[0] = x[0] << n
+	}
+	return z
+}
+
+func (z *Int) Rsh(x *Int, n uint) *Int {
+	if n == 0 {
+		return z.Set(x)
+	}
+	if x.IsNegative() {
+		return z.negRsh(x, n)
+	}
+	return z.rsh(x, n)
+}
+
+func (z *Int) rsh(x *Int, n uint) *Int {
+	if n >= 255 {
+		return z.Clear()
+	}
+	switch {
+	case n >= 192:
+		n -= 192
+		z[3], z[2], z[1], z[0] = 0, 0, 0, x[3]>>n
+	case n >= 128:
+		n -= 128
+		z[3], z[2] = 0, 0
+		z[1] = x[3] >> n
+		z[0] = (x[3] << (64 - n)) | (x[2] >> n)
+	case n >= 64:
+		n -= 64
+		z[3] = 0
+		z[2] = x[3] >> n
+		z[1] = (x[3] << (64 - n)) | (x[2] >> n)
+		z[0] = (x[2] << (64 - n)) | (x[1] >> n)
+	default:
+		z[3] = x[3] >> n
+		z[2] = (x[3] << (64 - n)) | (x[2] >> n)
+		z[1] = (x[2] << (64 - n)) | (x[1] >> n)
+		z[0] = (x[1] << (64 - n)) | (x[0] >> n)
+	}
+	return z
+}
+
+func (z *Int) negRsh(x *Int, n uint) *Int {
+	if n >= 255 {
+		return z.SetAllBitsOne()
+	}
+	var v uint64 = 0xffffffffffffffff
+	switch {
+	case n >= 192:
+		n -= 192
+		z[3], z[2], z[1], z[0] = v, v, v, (v<<(64-n))|(x[3]>>n)
+	case n >= 128:
+		n -= 128
+		z[3], z[2] = v, v
+		z[1] = (v << (64 - n)) | (x[3] >> n)
+		z[0] = (x[3] << (64 - n)) | (x[2] >> n)
+	case n >= 64:
+		n -= 64
+		z[3] = v
+		z[2] = (v << (64 - n)) | (x[3] >> n)
+		z[1] = (x[3] << (64 - n)) | (x[2] >> n)
+		z[0] = (x[2] << (64 - n)) | (x[1] >> n)
+	default:
+		z[3] = (v << (64 - n)) | (x[3] >> n)
+		z[2] = (x[3] << (64 - n)) | (x[2] >> n)
+		z[1] = (x[2] << (64 - n)) | (x[1] >> n)
+		z[0] = (x[1] << (64 - n)) | (x[0] >> n)
+	}
+	return z
+}
+
+func (z *Int) Sqrt(x *Int) *Int {
+	if x.IsNegative() {
+		panic(ErrNegativeNum)
+	}
+	if x.IsInt64() {
+		return z.SetInt64(int64(math.Sqrt(float64(x.Int64()))))
+	}
+	var (
+		z1 = &Int{1, 0, 0, 0}
+		z2 = &Int{}
+	)
+	z1 = z1.Lsh(z1, uint(x.BitLen()+1)/2)
+	for {
+		z2 = z2.Quo(x, z1)
+		z2 = z2.Add(z2, z1)
+		{
+			a := z2[3] << 63
+			z2[3] = z2[3] >> 1
+			b := z2[2] << 63
+			z2[2] = (z2[2] >> 1) | a
+			a = z2[1] << 63
+			z2[1] = (z2[1] >> 1) | b
+			z2[0] = (z2[0] >> 1) | a
+		}
+		if z2.Cmp(z1) >= 0 {
+			return z.Set(z1)
+		}
+		z1, z2 = z2, z1
+	}
+}
+
+func (z *Int) BitLen() int {
+	switch {
+	case z[3] != 0:
+		return 192 + bits.Len64(z[3])
+	case z[2] != 0:
+		return 128 + bits.Len64(z[2])
+	case z[1] != 0:
+		return 64 + bits.Len64(z[1])
+	default:
+		return bits.Len64(z[0])
+	}
 }
