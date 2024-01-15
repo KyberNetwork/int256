@@ -233,3 +233,22 @@ func (z *Int) ToBig() *big.Int {
 	}
 	return b
 }
+
+func (z *Int) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + z.Dec() + `"`), nil
+}
+
+func (z *Int) UnmarshalJSON(b []byte) error {
+	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {
+		return z.UnmarshalText(b)
+	}
+	return z.SetFromDec(string(b[1 : len(b)-1]))
+}
+
+func (z *Int) MarshalText() ([]byte, error) {
+	return []byte(z.Dec()), nil
+}
+
+func (z *Int) UnmarshalText(input []byte) error {
+	return z.SetFromDec(string(input))
+}

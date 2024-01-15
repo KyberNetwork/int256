@@ -1,6 +1,7 @@
 package int256
 
 import (
+	"encoding/json"
 	"math/big"
 	"testing"
 
@@ -370,4 +371,10 @@ func TestToBig(t *testing.T) {
 		b := z.ToBig()
 		assert.Equal(t, v, b.String())
 	})
+}
+
+func TestMarshal(t *testing.T) {
+	a := MustFromDec("12313")
+	json.Marshal(a)
+	t.Error(a)
 }
