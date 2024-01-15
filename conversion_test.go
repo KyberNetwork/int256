@@ -373,8 +373,51 @@ func TestToBig(t *testing.T) {
 	})
 }
 
-func TestMarshal(t *testing.T) {
-	a := MustFromDec("12313")
-	json.Marshal(a)
-	t.Error(a)
+func TestMarshalJson(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := MustFromDec("141243")
+		b, err := json.Marshal(x)
+		assert.Nil(t, err)
+		assert.Equal(t, `"141243"`, string(b))
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := MustFromDec("-141243")
+		b, err := json.Marshal(x)
+		assert.Nil(t, err)
+		assert.Equal(t, `"-141243"`, string(b))
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := MustFromDec("0")
+		b, err := json.Marshal(x)
+		assert.Nil(t, err)
+		assert.Equal(t, `"0"`, string(b))
+	})
+}
+
+func TestUnmarshalJson(t *testing.T) {
+	t.Run("1. should return correct result", func(t *testing.T) {
+		x := `"14214214"`
+		var z Int
+		err := json.Unmarshal([]byte(x), &z)
+		assert.Nil(t, err)
+		assert.Equal(t, "14214214", z.Dec())
+	})
+
+	t.Run("2. should return correct result", func(t *testing.T) {
+		x := `14214214`
+		var z Int
+		err := json.Unmarshal([]byte(x), &z)
+		assert.Nil(t, err)
+		assert.Equal(t, "14214214", z.Dec())
+	})
+
+	t.Run("3. should return correct result", func(t *testing.T) {
+		x := `-14214214`
+		var z Int
+		err := json.Unmarshal([]byte(x), &z)
+		assert.Nil(t, err)
+		assert.Equal(t, "-14214214", z.Dec())
+	})
 }
