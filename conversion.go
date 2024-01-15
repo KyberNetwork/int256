@@ -191,10 +191,10 @@ func (z *Int) SetFromBig(b *big.Int) bool {
 			numWords = maxWords
 		}
 		for i := 0; i < numWords; i++ {
-			if i%2 == 0 {
-				z[i/2] = uint64(words[i])
+			if i&1 == 0 {
+				z[i>>1] = uint64(words[i])
 			} else {
-				z[i/2] |= uint64(words[i]) << 32
+				z[i>>1] |= uint64(words[i]) << 32
 			}
 		}
 	}

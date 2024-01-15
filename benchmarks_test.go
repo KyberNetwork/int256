@@ -405,3 +405,402 @@ func BenchmarkFromDecimalString(bench *testing.B) {
 	bench.Run("big", fromdecbig)
 	bench.Run("int256", fromdecint256)
 }
+
+func BenchmarkAnd(bench *testing.B) {
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesBI   = [][2]*big.Int{}
+		testcasesI256 = [][2]*Int{}
+	)
+
+	for i := 0; i < 200; i++ {
+		xBI := new(big.Int).Rand(rnd, lim)
+		yBI := new(big.Int).Rand(rnd, lim)
+		negxBI := new(big.Int).Neg(xBI)
+		negyBI := new(big.Int).Neg(yBI)
+
+		xI256 := MustFromBig(xBI)
+		yI256 := MustFromBig(yBI)
+		negxI256 := new(Int).Neg(xI256)
+		negyI256 := new(Int).Neg(yI256)
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{xBI, yBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{xI256, yI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{negxBI, negyBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{negxI256, negyI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{xBI, negyBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{xI256, negyI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{negxBI, yBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{negxI256, yI256})
+	}
+
+	sz := len(testcasesBI)
+
+	andint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).And(testcasesI256[testID][0], testcasesI256[testID][1])
+		}
+	}
+
+	andbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).And(testcasesBI[testID][0], testcasesBI[testID][1])
+		}
+	}
+
+	bench.Run("big", andbig)
+	bench.Run("int256", andint256)
+}
+
+func BenchmarkOr(bench *testing.B) {
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesBI   = [][2]*big.Int{}
+		testcasesI256 = [][2]*Int{}
+	)
+
+	for i := 0; i < 200; i++ {
+		xBI := new(big.Int).Rand(rnd, lim)
+		yBI := new(big.Int).Rand(rnd, lim)
+		negxBI := new(big.Int).Neg(xBI)
+		negyBI := new(big.Int).Neg(yBI)
+
+		xI256 := MustFromBig(xBI)
+		yI256 := MustFromBig(yBI)
+		negxI256 := new(Int).Neg(xI256)
+		negyI256 := new(Int).Neg(yI256)
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{xBI, yBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{xI256, yI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{negxBI, negyBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{negxI256, negyI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{xBI, negyBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{xI256, negyI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{negxBI, yBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{negxI256, yI256})
+	}
+
+	sz := len(testcasesBI)
+
+	orint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).Or(testcasesI256[testID][0], testcasesI256[testID][1])
+		}
+	}
+
+	orbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).Or(testcasesBI[testID][0], testcasesBI[testID][1])
+		}
+	}
+
+	bench.Run("big", orbig)
+	bench.Run("int256", orint256)
+}
+
+func BenchmarkXor(bench *testing.B) {
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesBI   = [][2]*big.Int{}
+		testcasesI256 = [][2]*Int{}
+	)
+
+	for i := 0; i < 200; i++ {
+		xBI := new(big.Int).Rand(rnd, lim)
+		yBI := new(big.Int).Rand(rnd, lim)
+		negxBI := new(big.Int).Neg(xBI)
+		negyBI := new(big.Int).Neg(yBI)
+
+		xI256 := MustFromBig(xBI)
+		yI256 := MustFromBig(yBI)
+		negxI256 := new(Int).Neg(xI256)
+		negyI256 := new(Int).Neg(yI256)
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{xBI, yBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{xI256, yI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{negxBI, negyBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{negxI256, negyI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{xBI, negyBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{xI256, negyI256})
+
+		testcasesBI = append(testcasesBI, [2]*big.Int{negxBI, yBI})
+		testcasesI256 = append(testcasesI256, [2]*Int{negxI256, yI256})
+	}
+
+	sz := len(testcasesBI)
+
+	xorint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).Xor(testcasesI256[testID][0], testcasesI256[testID][1])
+		}
+	}
+
+	xorbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).Xor(testcasesBI[testID][0], testcasesBI[testID][1])
+		}
+	}
+
+	bench.Run("big", xorbig)
+	bench.Run("int256", xorint256)
+}
+
+func BenchmarkNot(bench *testing.B) {
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesI256 = []*Int{}
+		testcasesBI   = []*big.Int{}
+	)
+
+	for i := 0; i < 200; i++ {
+		x := new(big.Int).Rand(rnd, lim)
+		negx := new(big.Int).Neg(x)
+
+		testcasesBI = append(testcasesBI, x)
+		testcasesBI = append(testcasesBI, negx)
+
+		testcasesI256 = append(testcasesI256, MustFromBig(x))
+		testcasesI256 = append(testcasesI256, MustFromBig(negx))
+	}
+
+	sz := len(testcasesBI)
+
+	notint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).Not(testcasesI256[testID])
+		}
+	}
+
+	notbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).Not(testcasesBI[testID])
+		}
+	}
+
+	bench.Run("big", notbig)
+	bench.Run("int256", notint256)
+}
+
+func BenchmarkLsh(bench *testing.B) {
+	type pairI256 struct {
+		X *Int
+		N uint
+	}
+
+	type pairBI struct {
+		X *big.Int
+		N uint
+	}
+
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesI256 = []pairI256{}
+		testcasesBI   = []pairBI{}
+	)
+
+	for i := 0; i < 200; i++ {
+		x := new(big.Int).Rand(rnd, lim)
+		nx := uint(rnd.Int63() % 256)
+
+		negx := new(big.Int).Neg(x)
+		nnegx := uint(rnd.Int63() % 256)
+
+		testcasesBI = append(testcasesBI, pairBI{
+			X: x,
+			N: nx,
+		})
+		testcasesBI = append(testcasesBI, pairBI{
+			X: negx,
+			N: nnegx,
+		})
+
+		testcasesI256 = append(testcasesI256, pairI256{
+			X: MustFromBig(x),
+			N: nx,
+		})
+		testcasesI256 = append(testcasesI256, pairI256{
+			X: MustFromBig(negx),
+			N: nnegx,
+		})
+	}
+
+	sz := len(testcasesBI)
+
+	lshint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).Lsh(testcasesI256[testID].X, testcasesI256[testID].N)
+		}
+	}
+
+	lshbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).Lsh(testcasesBI[testID].X, testcasesBI[testID].N)
+		}
+	}
+
+	bench.Run("big", lshbig)
+	bench.Run("int256", lshint256)
+}
+
+func BenchmarkRsh(bench *testing.B) {
+	type pairI256 struct {
+		X *Int
+		N uint
+	}
+
+	type pairBI struct {
+		X *big.Int
+		N uint
+	}
+
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesI256 = []pairI256{}
+		testcasesBI   = []pairBI{}
+	)
+
+	for i := 0; i < 200; i++ {
+		x := new(big.Int).Rand(rnd, lim)
+		nx := uint(rnd.Int63() % 256)
+
+		negx := new(big.Int).Neg(x)
+		nnegx := uint(rnd.Int63() % 256)
+
+		testcasesBI = append(testcasesBI, pairBI{
+			X: x,
+			N: nx,
+		})
+		testcasesBI = append(testcasesBI, pairBI{
+			X: negx,
+			N: nnegx,
+		})
+
+		testcasesI256 = append(testcasesI256, pairI256{
+			X: MustFromBig(x),
+			N: nx,
+		})
+		testcasesI256 = append(testcasesI256, pairI256{
+			X: MustFromBig(negx),
+			N: nnegx,
+		})
+	}
+
+	sz := len(testcasesBI)
+
+	rshint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).Rsh(testcasesI256[testID].X, testcasesI256[testID].N)
+		}
+	}
+
+	rshbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).Rsh(testcasesBI[testID].X, testcasesBI[testID].N)
+		}
+	}
+
+	bench.Run("big", rshbig)
+	bench.Run("int256", rshint256)
+}
+
+func BenchmarkSqrt(bench *testing.B) {
+	var (
+		// 2^255 - 1
+		lim, _ = new(big.Int).SetString("57896044618658097711785492504343953926634992332820282019728792003956564819967", 10)
+		rnd    = rand.New(rand.NewSource(rand.Int63()))
+
+		testcasesI256 = []*Int{}
+		testcasesBI   = []*big.Int{}
+	)
+
+	for i := 0; i < 500; i++ {
+		x := new(big.Int).Rand(rnd, lim)
+		testcasesBI = append(testcasesBI, x)
+		testcasesI256 = append(testcasesI256, MustFromBig(x))
+	}
+
+	sz := len(testcasesBI)
+
+	sqrtint256 := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(Int).Sqrt(testcasesI256[testID])
+		}
+	}
+
+	sqrtbig := func(bench *testing.B) {
+		testID := 0
+		bench.ResetTimer()
+		for i := 0; i < bench.N; i++ {
+			testID = i % sz
+			new(big.Int).Sqrt(testcasesBI[testID])
+		}
+	}
+
+	bench.Run("big", sqrtbig)
+	bench.Run("int256", sqrtint256)
+}
