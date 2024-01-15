@@ -532,10 +532,10 @@ func (z *Int) Sqrt(x *Int) *Int {
 		return z.SetInt64(int64(math.Sqrt(float64(x.Int64()))))
 	}
 	var (
-		z1 = &Int{1, 0, 0, 0}
-		z2 = &Int{}
+		z1 = new(Int).SetOne()
+		z2 = new(Int)
 	)
-	z1 = z1.Lsh(z1, uint(x.BitLen()+1)/2)
+	z1 = z1.Lsh(z1, uint(x.BitLen()+1)>>1)
 	for {
 		z2 = z2.Quo(x, z1)
 		z2 = z2.Add(z2, z1)
