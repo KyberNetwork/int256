@@ -210,21 +210,22 @@ func (z *Int) SetFromBig(b *big.Int) bool {
 }
 
 func (z *Int) ToBig() *big.Int {
-	isNeg := z.IsNegative()
+	t := z.Clone()
+	isNeg := t.IsNegative()
 	if isNeg {
-		z.Neg(z)
+		t.Neg(t)
 	}
 	b := new(big.Int)
 	switch maxWords {
 	case 4:
-		words := [4]big.Word{big.Word(z[0]), big.Word(z[1]), big.Word(z[2]), big.Word(z[3])}
+		words := [4]big.Word{big.Word(t[0]), big.Word(t[1]), big.Word(t[2]), big.Word(t[3])}
 		b.SetBits(words[:])
 	case 8:
 		words := [8]big.Word{
-			big.Word(z[0]), big.Word(z[0] >> 32),
-			big.Word(z[1]), big.Word(z[1] >> 32),
-			big.Word(z[2]), big.Word(z[2] >> 32),
-			big.Word(z[3]), big.Word(z[3] >> 32),
+			big.Word(t[0]), big.Word(t[0] >> 32),
+			big.Word(t[1]), big.Word(t[1] >> 32),
+			big.Word(t[2]), big.Word(t[2] >> 32),
+			big.Word(t[3]), big.Word(t[3] >> 32),
 		}
 		b.SetBits(words[:])
 	}

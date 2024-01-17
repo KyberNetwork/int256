@@ -344,13 +344,14 @@ func (z *Int) urem(x, y *Int) *Int {
 }
 
 func (z *Int) Pow(x *Int, n uint64) *Int {
+	c := x.Clone()
 	z.SetOne()
 	for n > 0 {
 		if n&1 == 1 {
-			z.Mul(z, x)
+			z.Mul(z, c)
 		}
 		n >>= 1
-		x.Mul(x, x)
+		c.Mul(c, c)
 	}
 	return z
 }
