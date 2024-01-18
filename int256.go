@@ -1,6 +1,7 @@
 package int256
 
 import (
+	"encoding/binary"
 	"errors"
 	"math"
 	"math/bits"
@@ -566,5 +567,21 @@ func (z *Int) BitLen() int {
 		return 64 + bits.Len64(z[1])
 	default:
 		return bits.Len64(z[0])
+	}
+}
+
+func (z *Int) SetBytes32(in []byte) *Int {
+	_ = in[31] // bounds check hint to compiler; see golang.org/issue/14808
+	z[3] = binary.BigEndian.Uint64(in[0:8])
+	z[2] = binary.BigEndian.Uint64(in[8:16])
+	z[1] = binary.BigEndian.Uint64(in[16:24])
+	z[0] = binary.BigEndian.Uint64(in[24:32])
+	return z
+}
+
+// WriteToArray32 writes all 32 bytes of z to the destination array, including zero-bytes
+func (z *Int) WriteToArray32(dest *[32]byte) {
+	for i := 0; i < 32; i++ {
+		dest[31-i] = byte(z[i/8] >> uint64(8*(i%8)))
 	}
 }
